@@ -1,0 +1,33 @@
+
+
+Private Sub Label1_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+Range("F7").Comment.Visible = False
+Range("H7").Comment.Visible = False
+Range("J7").Comment.Visible = False
+End Sub
+
+Private Sub Label2_Click()
+Call LOADTARGET
+End Sub
+
+Private Sub Label2_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+Range("F7").Comment.Visible = True
+End Sub
+
+Private Sub Label3_Click()
+Call UPDATE_TARGET
+End Sub
+
+Private Sub Label3_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+Range("H7").Comment.Visible = True
+End Sub
+
+Private Sub Label6_Click()
+Call RefreshPivotTableTARGET
+End Sub
+
+Private Sub Label6_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+Range("J7").Comment.Visible = True
+End Sub
+
+
