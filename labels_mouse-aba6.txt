@@ -1,33 +1,33 @@
+'''''funções de Mouse Move 
 
-
+'''esconde balão de informações ao passar o mouse fora da area de informação
 Private Sub Label1_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Range("F7").Comment.Visible = False
-Range("H7").Comment.Visible = False
-Range("J7").Comment.Visible = False
+  Range("F7").Comment.Visible = False
+  Range("H7").Comment.Visible = False
+  Range("J7").Comment.Visible = False
 End Sub
 
-Private Sub Label2_Click()
-Call LOADTARGET
-End Sub
-
+'''mostra balão de informação ao ficar com mouse pela celula
 Private Sub Label2_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Range("F7").Comment.Visible = True
-End Sub
-
-Private Sub Label3_Click()
-Call UPDATE_TARGET
+  Range("F7").Comment.Visible = True
 End Sub
 
 Private Sub Label3_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Range("H7").Comment.Visible = True
+  Range("H7").Comment.Visible = True
 End Sub
 
 Private Sub Label6_Click()
-Call RefreshPivotTableTARGET
+  Call RefreshPivotTableTARGET
 End Sub
 
 Private Sub Label6_MouseMove(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
-Range("J7").Comment.Visible = True
+  Range("J7").Comment.Visible = True
 End Sub
 
+Private Sub Label3_Click()
+  Call UPDATE_TARGET
+End Sub
 
+Private Sub Label2_Click()
+  Call LOADTARGET
+End Sub
