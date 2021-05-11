@@ -1,0 +1,32 @@
+Sub SelectControlTARGET()
+
+    Dim ctrID As String
+    On Error GoTo Err
+    
+    ctrID = Application.Caller
+    
+    Select Case ctrID
+    
+        'SHOW
+        Case "btTcodserviceline": ActiveSheet.Shapes.Range(Array("slTcodserviceline")).Visible = msoTrue
+        Case "btTgroupaccount": Call ShowDialog("Show", "slTgroupaacount")
+        Case "btTccode": Call ShowDialog("Show", "slccode")
+        Case "btTversao": Call ShowDialog("Show", "slversaotarget")
+        Case "btTsubindustry": Call ShowDialog("Show", "slsubindustrytarget")
+        
+        'HIDE
+        Case "btTserviceline": ActiveSheet.Shapes.Range(Array("slTcodserviceline")).Visible = msoFalse 'Call ShowDialog("Hide", "NameExibition")
+        Case "btTCLgrouppaccount1": Call ShowDialog("Hide", "slTgroupaacount")
+        Case "btTCLccode": Call ShowDialog("Hide", "slccode")
+        Case "btTCLversao": Call ShowDialog("Hide", "slversaotarget")
+        Case "btTCLsubindustry": Call ShowDialog("Hide", "slsubindustrytarget")
+        
+        Case Else: ' Stop
+    End Select
+    
+ResumeNext:
+    Exit Sub
+    
+Err:
+    Resume ResumeNext
+End Sub
