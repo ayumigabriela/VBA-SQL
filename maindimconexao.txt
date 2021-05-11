@@ -1,0 +1,263 @@
+Dim gConexao As ADODB.Connection
+
+Sub Conectar()
+
+    Dim strConexao As String
+    Set gConexao = New ADODB.Connection
+    
+    strConexao = "Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;Initial Catalog=DW;Data Source=172.16.162.117"
+    gConexao.Open strConexao
+    
+End Sub
+
+ Sub Desconectar()
+
+        gConexao.Close
+        Set gConexao = Nothing
+        
+End Sub
+
+Sub LOAD_BACKLOG()
+
+Dim linha As Long
+Dim ultima_linha
+
+Range("A8").Comment.Visible = False
+Range("B8").Comment.Visible = False
+Range("C8").Comment.Visible = False
+
+Answer = MsgBox("Atualizar valores?", vbQuestion + vbYesNo + vbDefaultButton2)
+
+    If Answer = vbYes Then
+    
+    Application.ScreenUpdating = False
+    Sheets("Sheet1").Visible = True
+    
+    Sheets("input backlog").Range("F11:BM2048").ClearContents
+    Sheets("Input backlog").Copy After:=Sheets(2)
+    ultima_linha = Worksheets("Input backlog (2)").Cells(Rows.Count, 3).End(xlUp).Row
+    linha = 11
+    Worksheets("Sheet1").Cells(11, 6).Copy
+        
+        Worksheets("input backlog (2)").Range("F11: BM" & CStr(ultima_linha)).PasteSpecial xlPasteFormulas
+        linha = linha + 1
+    
+    Worksheets("input backlog").Range("F11: BM" & CStr(ultima_linha)) = Worksheets("input backlog (2)").Range("F11: BM" & CStr(ultima_linha)).Value
+        
+    Application.DisplayAlerts = False
+    Sheets("Input backlog (2)").Delete
+    Sheets("Sheet1").Visible = False
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+    
+    MsgBox "Atualizado com sucesso"
+    End If
+    
+End Sub
+
+Sub UPDATE_BACKLOG()
+
+Range("A8").Comment.Visible = False
+Range("B8").Comment.Visible = False
+Range("C8").Comment.Visible = False
+
+    Dim valor As Variant: valor = CDec(0.7)
+    Dim wbs As String
+    Dim data As Date
+    Dim i As Long
+    Dim j As Integer
+    Dim contador As Long
+    Dim versao As String
+    Dim linhas As Long
+    Dim total As Long
+    Dim rodadas As Integer
+    Dim ultima_linha As Long
+    Dim string_insert As String
+    
+    rodadas = 0
+    i = 0
+    linhas = 0
+    ultima_linha = Worksheets("Input backlog").Cells(Rows.Count, 3).End(xlUp).Row
+    total = (ultima_linha - 10) * 60
+    versao = Worksheets("sheet1").Cells(4, 6).Text
+    contador = 0
+    Sheets("Sheet1").Visible = False
+    
+    Answer = MsgBox("Atualizar " & total & " valores?", vbQuestion + vbYesNo + vbDefaultButton2)
+    
+    If Answer = vbYes Then
+    
+    On Error GoTo erro
+    tempo = Timer
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    Sheets("Sheet1").Visible = True
+    
+    
+    
+    Do While i < ultima_linha - 10
+    
+    rodadas = rodadas + 1
+    
+    Do While i <= 600 * rodadas And i < ultima_linha - 10
+        
+        wbs = Worksheets("input backlog").Cells(i + 11, 3).Text
+
+        j = 0
+        
+        Do While j < 60
+            
+            If IsNumeric(Worksheets("input backlog").Cells(i + 11, j + 6).Value) And Worksheets("input backlog").Cells(i + 11, j + 6).Text <> "" Then
+            
+                valor = Worksheets("input backlog").Cells(i + 11, j + 6).Value
+                
+                data = Worksheets("input backlog").Cells(10, j + 6).Value
+              
+                string_insert = string_insert & " exec spUpdLminputbacklog '" & wbs & "'," & _
+                valor & ",'" & versao & "','" & data & "'" & vbNewLine
+    
+            End If
+            
+            contador = contador + 1
+            linhas = linhas + 1
+            
+            j = j + 1
+            Range("D5") = linhas / total
+            
+        Loop
+        
+        i = i + 1
+
+    Loop
+    
+    If string_insert <> "" Then
+        lsExecuteSQL (string_insert)
+    End If
+
+    Loop
+    
+    Columns("F:BK").EntireColumn.AutoFit
+    Worksheets("input backlog").Cells(1, 1).ClearContents
+    
+    Application.DisplayAlerts = True
+    Application.EnableEvents = True
+    Range("D5") = 0
+    Application.Calculation = xlCalculationAutomatic
+    
+    'MsgBox "tempo:" & (Timer - tempo) / 60 & " min"
+    
+    MsgBox contador & " valores atualizados com sucesso"
+    
+    Else
+    Application.DisplayAlerts = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+    Exit Sub
+    
+    End If
+    
+    Exit Sub
+erro:
+    MsgBox Err.Number & Err.Description
+    
+End Sub
+
+Private Sub lsExecuteSQL(ByVal SQL As String)
+   
+    On Error GoTo erro
+    
+    Dim lrs As ADODB.Recordset
+    Set lrs = New ADODB.Recordset
+    
+    Conectar
+    
+    gConexao.Execute SQL
+    
+    Desconectar
+    
+    Exit Sub
+    
+erro: MsgBox Err.Number & Err.Description
+
+End Sub
+
+Sub RefreshPivotTable_BACKLOG()
+
+    Dim pivotTable As pivotTable
+    Range("A8").Comment.Visible = False
+    Range("B8").Comment.Visible = False
+    Range("C8").Comment.Visible = False
+    
+    Answer = MsgBox("Atualizar Pivot Table?", vbQuestion + vbYesNo + vbDefaultButton2)
+    
+  If Answer = vbYes Then
+  Sheets("Sheet1").Visible = True
+  'Application.ScreenUpdating = False
+  Application.EnableEvents = False
+  Application.DisplayAlerts = False
+  Application.Calculation = xlCalculationManual
+    Dim contador As Integer
+    contador = 0
+  On Error GoTo erro
+  
+  For Each plan In ActiveWorkbook.Sheets
+  
+    For Each pivotTable In plan.PivotTables
+    
+        If pivotTable.Name = "pivotwbs" Or pivotTable.Name = "inputbacklog" Then
+        contador = contador + 1
+        Worksheets("input backlog").Cells(5, 4) = "  Atualizando... " & contador & "/2"
+        pivotTable.RefreshTable
+        End If
+    Next
+    
+  Next
+    Worksheets("input backlog").Cells(5, 4) = ""
+    MsgBox "Concluído"
+   ' Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.Calculation = xlCalculationAutomatic
+    End If
+    Sheets("Sheet1").Visible = False
+    Exit Sub
+    
+erro: MsgBox Err.Number & Err.Description
+End Sub
+
+Sub SelectControlBACKLOG()
+
+    Dim ctrID As String
+    On Error GoTo Err
+    
+    ctrID = Application.Caller
+    
+    Select Case ctrID
+    
+        'SHOW
+        Case "btcountry": ActiveSheet.Shapes.Range(Array("slcountry")).Visible = msoTrue
+        Case "btcodserviceline": Call ShowDialog("Show", "SlServiceLine")
+        Case "btirisDescription": Call ShowDialog("Show", "SlIrisdescription")
+        Case "btIndustry": Call ShowDialog("Show", "Slindustry")
+        Case "btsubindustry": Call ShowDialog("Show", "Slsubindustry")
+        Case "btprojManager": Call ShowDialog("Show", "slprojmanager")
+        Case "btversao": Call ShowDialog("Show", "slversao")
+        'HIDE
+        Case "btClose": ActiveSheet.Shapes.Range(Array("slCountry")).Visible = msoFalse 'Call ShowDialog("Hide", "NameExibition")
+        Case "btCLserviceline": Call ShowDialog("Hide", "SlServiceLine")
+        Case "btCLiris": Call ShowDialog("Hide", "SlIrisdescription")
+        Case "btCLindustry": Call ShowDialog("Hide", "Slindustry")
+        Case "btCLsubindustry": Call ShowDialog("Hide", "Slsubindustry")
+        Case "btCLprojmanager": Call ShowDialog("Hide", "slprojmanager")
+        Case "btCLversao": Call ShowDialog("Hide", "slversao")
+        Case Else: ' Stop
+    End Select
+    
+ResumeNext:
+    Exit Sub
+    
+Err:
+    Resume ResumeNext
+End Sub
