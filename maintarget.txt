@@ -1,0 +1,314 @@
+Dim gConexao As ADODB.Connection
+
+Sub Conectar()
+
+    Dim strConexao As String
+    Set gConexao = New ADODB.Connection
+    
+    strConexao = "Provider=SQLOLEDB.1;Integrated Security=SSPI;Persist Security Info=False;Initial Catalog=DW;Data Source=172.16.162.117"
+    gConexao.Open strConexao
+    
+End Sub
+
+ Sub Desconectar()
+
+        gConexao.Close
+        Set gConexao = Nothing
+        
+End Sub
+
+Sub UPDATE_TARGET()
+
+Dim inicio As Long
+Dim final As Long
+Dim aux_total As Integer
+Dim Industria As String
+    
+    inicio = 12
+    final = Worksheets("input target").Cells(inicio, 2).End(xlDown).Row
+    
+    UPDATE inicio, final, aux_total
+
+End Sub
+
+Function Subindustry() As Long
+
+Dim linha As Long
+Dim rgb1 As Long
+Dim subind As String
+
+rgb1 = 15986394
+subind = Worksheets("localamount_auxiliar").Range("H3").Text
+linha = 12
+Sheets("consult").Visible = True
+
+Do While linha <= 3706
+
+    If Worksheets("consult").Cells(linha, 2).Interior.Color = rgb1 And Worksheets("consult").Cells(linha, 2).Text = subind Then
+        Subindustry = linha
+        Exit Function
+    End If
+    
+    linha = linha + 1
+Loop
+
+End Function
+
+Private Function IsIriscode(linha) As Boolean
+
+    rgb1 = 15986394
+    RGB2 = 15189684
+    IsIriscode = True
+    'verifica se é uma linha de iriscode
+    
+    If Worksheets("Input Target").Cells(linha, 2).Interior.Color = rgb1 Or Worksheets("Input Target").Cells(linha, 2).Interior.Color = RGB2 _
+        And Worksheets("input target").Cells(linha, 2).Text = "" Then
+        
+        IsIriscode = False
+    
+    End If
+
+End Function
+
+Private Sub UPDATE(inicio As Long, final As Long, aux_total As Integer)
+
+    Dim coluna As Integer
+    Dim linha As Long
+    Dim Iriscode As String
+    Dim data As Date
+    Dim CompanyCode As String
+    Dim ServiceLine As String
+    Dim GroupAccount As String
+    Dim versao As String
+    Dim valor As Variant
+    Dim string_insert As String
+    Dim Rodada As Integer
+    Dim total As Long
+    Dim contador As Long
+    
+    total = (final - inicio + 1) * 60
+    Answer = MsgBox("Atualizar " & total & " valores?", vbQuestion + vbYesNo + vbDefaultButton2)
+
+    If Answer = vbYes Then
+        tempo = Timer
+        Application.EnableEvents = False
+        Application.DisplayAlerts = False
+        Application.Calculation = xlCalculationManual
+        
+        linha = inicio
+        Sheets("localamount_auxiliar").Visible = True
+        
+        versao = Worksheets("localamount_auxiliar").Cells(3, 7).Text
+        CompanyCode = Worksheets("localamount_auxiliar").Cells(2, 2).Text
+        Iriscode = Worksheets("input target").Cells(linha, 1).Text
+        ServiceLine = Worksheets("localamount_auxiliar").Cells(2, 3).Text
+        GroupAccount = Worksheets("localamount_auxiliar").Cells(2, 4).Text
+        
+        Sheets("localamount_auxiliar").Visible = False
+        
+    On Error GoTo erro
+        
+            Do While linha <= final
+            
+                Rodada = Rodada + 1
+                string_insert = ""
+                Do While Len(string_insert) <= 900000 And linha <= final
+                
+                    If IsIriscode(linha) Then
+                        
+                        Iriscode = Worksheets("input target").Cells(linha, 2).Text
+                        coluna = 4
+                        
+                        Do While coluna <= 67
+                            If Worksheets("input target").Cells(linha, coluna).Text <> "" And Worksheets("input target").Cells(9, coluna).Text <> "" Then
+                            If IsNumeric(Worksheets("input target").Cells(linha, coluna).Value) Then
+                                                                 
+                                    valor = Worksheets("input target").Cells(linha, coluna).Value
+                                    data = Worksheets("input target").Cells(9, coluna).Value
+                                    string_insert = string_insert & " exec spUpdLmInputTarget '" & Iriscode & "'," & _
+                                    valor & ",'" & versao & "','" & data & "','" & CompanyCode & "','" & ServiceLine & "','" & GroupAccount & "'" & vbNewLine
+                                                                                               
+                            Else
+                                MsgBox "Erro na linha " & linha & " e na coluna " & coluna
+                                FinalizaSub
+                                
+                                Exit Sub
+                            End If
+                            End If
+                        
+                            
+                            contador = contador + 1
+                            Worksheets("input target").Cells(3, 2) = contador / total
+                            coluna = coluna + 1
+                            
+                        Loop
+                        
+                    End If
+                    linha = linha + 1
+                Loop
+                
+                If string_insert <> "" Then
+                  
+                    lsExecuteSQL (string_insert)
+                    
+                End If
+    
+            Loop
+            
+            FinalizaSub
+                    
+         MsgBox (Timer - tempo) / 60
+        
+    End If
+    
+    Worksheets("input target").Cells(3, 2) = 0
+Exit Sub
+
+erro: MsgBox Err.Number & Err.Description
+Exit Sub
+
+End Sub
+
+Private Sub FinalizaSub()
+
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.Calculation = xlCalculationAutomatic
+    
+End Sub
+
+Sub RefreshPivotTableTARGET()
+
+  Dim pivotTable As pivotTable
+  
+  Answer = MsgBox("Atualizar Pivot?", vbQuestion + vbYesNo + vbDefaultButton2)
+    
+  If Answer = vbYes Then
+  'Application.ScreenUpdating = False
+  Application.EnableEvents = False
+  Application.DisplayAlerts = False
+  'Application.Calculation = xlCalculationManual
+  Sheets("localamount_auxiliar").Visible = True
+  tempo = Timer
+  On Error GoTo erro
+  For Each plan In ActiveWorkbook.Sheets
+    
+    For Each pivotTable In plan.PivotTables
+
+        If pivotTable.Name = "inputtarget" Or pivotTable.Name = "versao" Then
+        contador = contador + 1
+        Worksheets("input target").Cells(5, 15) = "Atualizando... " & contador & "/3"
+        pivotTable.RefreshTable
+        
+        End If
+    Next
+    
+  Next
+    contador = contador + 1
+    Worksheets("input target").Cells(5, 15) = "Atualizando... " & contador & "/3"
+    'Application.ScreenUpdating = True
+    
+    FinalizaSub
+    
+    MsgBox "Sucesso " & (Timer - tempo) / 60 & "min"
+ End If
+   Sheets("localamount_auxiliar").Visible = False
+    Worksheets("input target").Cells(5, 15) = ""
+    Exit Sub
+    
+erro: MsgBox Err.Number & Err.Description
+
+End Sub
+
+Function finalIndustry() As Long
+
+Dim subind As String
+Dim linha As Long
+
+Sheets("localamount_auxiliar").Visible = True
+
+linha = 1
+subind = Worksheets("localamount_auxiliar").Range("H3").Text
+Do While linha <= 73
+
+    If Worksheets("localamount_auxiliar").Cells(linha, 1) = subind Then
+        finalIndustry = Worksheets("localamount_auxiliar").Cells(linha + 2, 1).Value
+        Sheets("localamount_auxiliar").Visible = False
+        Exit Function
+    End If
+linha = linha + 1
+Loop
+
+End Function
+
+Sub LOADTARGET()
+
+    Dim rgb1 As Long
+    Dim linha As Long
+    Dim coluna As Integer
+    Dim RGB2 As Long
+    Dim inicio As Long
+    Dim final As Long
+        
+    Answer = MsgBox("Carregar valores?", vbQuestion + vbYesNo + vbDefaultButton2)
+    
+    If Answer = vbYes Then
+    
+         Application.ScreenUpdating = False
+         'Sheets("consult").Visible = True
+         tempo = Timer
+         'RefreshPivotTableTARGET
+         Worksheets("Input Target").Range("A11 : BO3708").Delete
+         
+         inicio = Subindustry
+         final = finalIndustry
+         
+         Sheets("consult").Range("A" & CStr(inicio) & " : BO" & CStr(final)).Copy
+         
+         Sheets("Input Target").Range("A11" & " : BO" & CStr(final - inicio + 11)).PasteSpecial Paste:=xlPasteAllUsingSourceTheme
+         Sheets("Input Target").Range("A11" & " : BO" & CStr(final - inicio + 11)).PasteSpecial Paste:=xlPasteValues
+         rgb1 = 15986394
+         RGB2 = 15189684
+         linha = inicio
+         
+         Do While linha <= final
+         
+             If Worksheets("consult").Cells(linha, 2).Interior.Color = rgb1 Or Worksheets("consult").Cells(linha, 2).Interior.Color = RGB2 Then
+                 
+                 Worksheets("consult").Rows(CStr(linha) & ":" & CStr(linha)).Copy
+                 Worksheets("Input Target").Rows(CStr(linha - inicio + 11) & ":" & CStr(linha - inicio + 11)).PasteSpecial Paste:=xlPasteFormats
+                 Worksheets("Input Target").Rows(CStr(linha - inicio + 11) & ":" & CStr(linha - inicio + 11)).PasteSpecial Paste:=xlPasteFormulas
+             
+             End If
+             
+             linha = linha + 1
+             
+         Loop
+         
+         Application.ScreenUpdating = True
+         Application.CutCopyMode = False
+         'Sheets("consult").Visible = False
+         MsgBox Timer - tempo
+         
+    End If
+    
+End Sub
+
+Private Sub lsExecuteSQL(ByVal SQL As String)
+   
+    On Error GoTo erro
+    
+    Dim lrs As ADODB.Recordset
+    Set lrs = New ADODB.Recordset
+    
+    Conectar
+    
+    gConexao.Execute SQL
+    
+    Desconectar
+    
+    Exit Sub
+    
+erro: MsgBox Err.Number & Err.Description
+
+End Sub
