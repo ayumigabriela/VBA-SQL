@@ -1,0 +1,121 @@
+
+Sub CorRGB()
+
+ 'Busca a cor RGB da célula da A1 da planilha ativa
+ C = Range("D1555").Interior.Color
+ R = C And 255
+ G = C \ 256 And 255
+ b = C \ 256 ^ 2 And 255
+ MsgBox RGB(R, G, b)
+ 
+End Sub
+
+Sub inserirvaloresteste()
+'inserir valores para update
+
+Dim linha As Long
+Dim coluna As Integer
+
+linha = 1888
+coluna = 4
+
+Do While coluna < 65
+linha = 1888
+Do While linha <= 2444
+  If Worksheets("Input Target").Cells(linha, coluna).Interior.Color = 13431551 Then
+                 
+                Worksheets("Input Target").Cells(linha, coluna) = 345
+End If
+linha = linha + 1
+Loop
+coluna = coluna + 1
+Loop
+MsgBox "ok"
+
+End Sub
+
+Sub ShowDialog(Optional uAction As String = "Hide", Optional IDcaller As String = "")
+
+    Dim ws As Worksheet
+    Dim si As SlicerItem
+    Dim Sh As Shape
+    Dim shC As Shape
+    Dim pt As pivotTable
+ 
+    On Error GoTo Err
+   
+    Application.ScreenUpdating = False
+    Set ws = ActiveSheet
+    Set Sh = ws.Shapes(IDcaller)
+    'Set pt = ws.PivotTables(strPT)
+    
+    If uAction = "Show" Then
+        'pt.PivotCache.Refresh
+        With Sh
+            .Visible = True
+            If IDcaller <> "" Then
+                Set shC = ws.Shapes(IDcaller)
+                .Top = shC.Top
+                .Left = shC.Left
+                .ZOrder msoBringToFront
+            End If
+        End With
+    Else
+    
+        Sh.Visible = False
+    End If
+    
+ResumeNext:
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Set Sh = Nothing
+    Set si = Nothing
+    Set pt = Nothing
+    Set ws = Nothing
+    Exit Sub
+    
+Err:
+    Resume ResumeNext
+End Sub
+
+
+Private Sub mudarformula()
+'muda a formula que procura valores
+
+    Dim RGB As Long
+    Dim linha As Long
+    Dim ultima_linha As Long
+    Dim coluna As Integer
+    Dim formula As String
+    
+    Worksheets("consult").Select
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    
+    RGB = 13431551 'cor das celulas
+    Range("D13").Copy 'celula em que esta a nova formula
+    
+    coluna = 6
+    ultima_linha = 3706
+    
+    Do While coluna < 67
+    linha = 13
+        Do While linha < ultima_linha
+        
+            If Cells(linha, coluna).Interior.Color = RGB Then
+                Cells(linha, coluna).PasteSpecial xlPasteFormulas
+            End If
+            
+            linha = linha + 1
+        Loop
+        coluna = coluna + 1
+    Loop
+    
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.Calculation = xlCalculationAutomatic
+    MsgBox "ok"
+    
+End Sub
+
